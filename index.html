@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MS Rewards Helper</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f0f;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 36px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    .status {
+      font-size: 1.1rem;
+      min-height: 28px;
+      margin-bottom: 8px;
+      color: #c0c0c0;
+    }
+
+    .topic {
+      font-size: 0.95rem;
+      color: #4fc3f7;
+      min-height: 22px;
+      margin-bottom: 24px;
+      font-style: italic;
+    }
+
+    .progress-bar-bg {
+      background: #2a2a2a;
+      border-radius: 8px;
+      height: 10px;
+      width: 100%;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0078d4, #4fc3f7);
+      border-radius: 8px;
+      transition: width 0.5s ease;
+    }
+
+    .countdown {
+      font-size: 0.85rem;
+      color: #666;
+      min-height: 20px;
+      margin-bottom: 28px;
+    }
+
+    button {
+      background: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 40px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+
+    button:hover:not(:disabled) { background: #005fa3; }
+    button:disabled { background: #333; color: #666; cursor: default; }
+
+    .done-msg {
+      margin-top: 20px;
+      font-size: 1rem;
+      color: #81c784;
+      min-height: 24px;
+    }
+
+    .log {
+      margin-top: 24px;
+      text-align: left;
+      max-height: 160px;
+      overflow-y: auto;
+      font-size: 0.78rem;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .log span { display: block; }
+    .log span.done-entry { color: #4caf50; }
+  </style>
+</head>
+<body>
+
+<h1>MS Rewards Helper</h1>
+<p class="subtitle">Automated Bing searches for daily points</p>
+
+<div class="card">
+  <div class="status" id="status">Ready</div>
+  <div class="topic"  id="topic"></div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <div class="countdown" id="countdown"></div>
+  <button id="startBtn" onclick="start()">Start</button>
+  <div class="done-msg" id="doneMsg"></div>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+  const TOPICS = [
+    "climate change 2025","best laptops 2025","how to learn guitar","nasa mars mission",
+    "world cup 2026 schedule","best netflix series 2025","how to make sourdough bread",
+    "electric vehicles range comparison","bitcoin price today","artificial intelligence news",
+    "best running shoes 2025","healthy breakfast ideas","how to meditate for beginners",
+    "latest iphone review","windows 11 tips and tricks","best video games 2025",
+    "how to invest in stocks","mediterranean diet benefits","space exploration news",
+    "best travel destinations 2025","how to learn python programming","youtube alternatives",
+    "best wireless headphones","coffee health benefits","how to improve sleep quality",
+    "streaming wars netflix vs disney","best budget smartphones","cybersecurity tips 2025",
+    "how to grow vegetables at home","solar panel installation cost","best free antivirus 2025",
+    "fastest electric cars","how to write a resume","best cities to live in usa",
+    "intermittent fasting results","how to fix back pain","cloud gaming services compared",
+    "best password managers","what is quantum computing","how to start a podcast",
+    "weight loss tips 2025","best sci fi books 2025","how to learn a new language fast",
+    "smart home devices 2025","best online courses for free","crypto regulations 2025",
+    "how to reduce screen time","best gaming monitors","recipe for homemade pasta",
+    "how does a black hole form","best budget airlines 2025","mental health tips for adults",
+    "how to build muscle fast","best keyboard for programming","remote work productivity tips",
+    "how to negotiate a salary","best photo editing apps","world population 2025",
+    "how to save money on groceries","best sci fi movies 2025","diy home improvement ideas",
+    "how does 5g work","best cities for digital nomads","recipe for chicken tikka masala",
+    "how to speed up windows 11","best streaming microphones","what is machine learning",
+    "how to start investing with little money","best ergonomic chairs 2025",
+    "how to grow a youtube channel","best anime series 2025","recipe for banana bread",
+    "how to learn chess strategy","best free design tools","what causes inflation",
+    "how to reduce anxiety naturally","best mechanical keyboards","top programming languages 2025",
+    "how to make cold brew coffee","best action cameras 2025","what is blockchain technology",
+    "how to build a pc 2025","best meal prep ideas","how to improve posture",
+    "top ai tools for productivity","best board games for adults","how does solar energy work",
+    "recipe for beef stew","how to get better at photography","best budget headphones 2025",
+    "what is the metaverse","how to train for a marathon","best smart watches 2025",
+    "how to declutter your home","latest space telescope images","best standing desks 2025",
+    "how to make espresso at home","what is quantum internet","best monitor for home office",
+    "how to learn touch typing","best free vpn services","recipe for tiramisu",
+    "how to improve memory and focus","best ultrawide monitors 2025"
+  ];
+
+  let running   = false;
+  let stopFlag  = false;
+  let countdown = 0;
+  let timer     = null;
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function log(msg, done) {
+    const el = document.getElementById("log");
+    const span = document.createElement("span");
+    if (done) span.className = "done-entry";
+    span.textContent = msg;
+    el.prepend(span);
+  }
+
+  function setCountdown(secs) {
+    countdown = secs;
+    tick();
+  }
+
+  function tick() {
+    if (countdown <= 0) {
+      document.getElementById("countdown").textContent = "";
+      return;
+    }
+    const m = Math.floor(countdown / 60);
+    const s = countdown % 60;
+    document.getElementById("countdown").textContent =
+      `Next search in ${m > 0 ? m + "m " : ""}${s}s`;
+    countdown--;
+    timer = setTimeout(tick, 1000);
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function start() {
+    if (running) return;
+    running  = true;
+    stopFlag = false;
+
+    document.getElementById("startBtn").disabled = true;
+    document.getElementById("doneMsg").textContent = "";
+    document.getElementById("log").innerHTML = "";
+
+    const total   = randInt(28, 32);
+    const topics  = shuffle(TOPICS).slice(0, total);
+
+    for (let i = 0; i < topics.length; i++) {
+      if (stopFlag) break;
+
+      const topic = topics[i];
+      const url   = "https://www.bing.com/search?q=" + encodeURIComponent(topic);
+
+      document.getElementById("status").textContent = `Search ${i + 1} / ${total}`;
+      document.getElementById("topic").textContent  = topic;
+      document.getElementById("progressFill").style.width = ((i / total) * 100) + "%";
+
+      window.open(url, "_blank");
+      log(`[${i + 1}/${total}] ${topic}`, false);
+
+      if (i < topics.length - 1) {
+        const wait = randInt(10, 180);
+        setCountdown(wait);
+        await sleep(wait * 1000);
+      }
+    }
+
+    clearTimeout(timer);
+    document.getElementById("progressFill").style.width = "100%";
+    document.getElementById("status").textContent  = `Done — ${topics.length} searches completed`;
+    document.getElementById("topic").textContent   = "";
+    document.getElementById("countdown").textContent = "";
+    document.getElementById("doneMsg").textContent = "✓ Come back tomorrow!";
+    document.getElementById("startBtn").disabled   = false;
+    log(`--- Run complete: ${topics.length} searches ---`, true);
+    running = false;
+  }
+</script>
+
+</body>
+</html>

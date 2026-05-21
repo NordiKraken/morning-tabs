@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MS Rewards Helper</title>
+  <title>Morning Tabs</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -120,8 +120,8 @@
 </head>
 <body>
 
-<h1>MS Rewards Helper</h1>
-<p class="subtitle">Automated Bing searches for daily points</p>
+<h1>Morning Tabs</h1>
+<p class="subtitle">Your daily browsing routine, automated</p>
 
 <div class="card">
   <div class="status" id="status">Ready</div>
@@ -130,7 +130,7 @@
     <div class="progress-bar-fill" id="progressFill"></div>
   </div>
   <div class="countdown" id="countdown"></div>
-  <button id="startBtn" onclick="start()">Start</button>
+  <button id="startBtn" onclick="start()">Start Morning Routine</button>
   <div class="done-msg" id="doneMsg"></div>
   <div class="log" id="log"></div>
 </div>
@@ -256,10 +256,10 @@
 
     clearTimeout(timer);
     document.getElementById("progressFill").style.width = "100%";
-    document.getElementById("status").textContent  = `Done — ${topics.length} searches completed`;
+    document.getElementById("status").textContent  = `Done — ${topics.length} topics browsed`;
     document.getElementById("topic").textContent   = "";
     document.getElementById("countdown").textContent = "";
-    document.getElementById("doneMsg").textContent = "✓ Come back tomorrow!";
+    document.getElementById("doneMsg").textContent = "✓ Morning routine complete!";
     document.getElementById("startBtn").disabled   = false;
     log(`--- Run complete: ${topics.length} searches ---`, true);
     running = false;

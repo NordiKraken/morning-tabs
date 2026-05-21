@@ -242,7 +242,7 @@
       document.getElementById("topic").textContent  = topic;
       document.getElementById("progressFill").style.width = ((i / total) * 100) + "%";
 
-      const url = "https://www.bing.com/search?q=" + encodeURIComponent(topic);
+      const url = "https://www.bing.com/search?q=" + encodeURIComponent(topic) + "&cc=xl&PC=SANSAAND&form=LWS001&ssp=1&safesearch=moderate&setlang=en-gb";
       window.open(url, "_blank");
       log(`[${i + 1}/${total}] ${topic}`, false);
 

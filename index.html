@@ -182,9 +182,31 @@
   ];
 
   let running   = false;
-  let countdown = 0;
-  let timer     = null;
   let wakeLock  = null;
+  let worker    = null;
+
+  // Web Worker defined inline as a Blob — not throttled when tab is minimized
+  const WORKER_SRC = `
+    let timer = null;
+    onmessage = function(e) {
+      if (e.data.cmd === 'start') {
+        let secs = e.data.secs;
+        clearInterval(timer);
+        timer = setInterval(() => {
+          secs--;
+          postMessage({ secs });
+          if (secs <= 0) clearInterval(timer);
+        }, 1000);
+      } else if (e.data.cmd === 'stop') {
+        clearInterval(timer);
+      }
+    };
+  `;
+
+  function createWorker() {
+    const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
+    return new Worker(URL.createObjectURL(blob));
+  }
 
   async function acquireWakeLock() {
     try {
@@ -227,26 +249,22 @@
     el.prepend(span);
   }
 
-  function setCountdown(secs) {
-    countdown = secs;
-    tick();
-  }
-
-  function tick() {
-    if (countdown <= 0) {
-      document.getElementById("countdown").textContent = "";
-      return;
-    }
-    const m = Math.floor(countdown / 60);
-    const s = countdown % 60;
+  function updateCountdownUI(secs) {
+    if (secs <= 0) { document.getElementById("countdown").textContent = ""; return; }
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
     document.getElementById("countdown").textContent =
       `Next search in ${m > 0 ? m + "m " : ""}${s}s`;
-    countdown--;
-    timer = setTimeout(tick, 1000);
   }
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  function workerSleep(secs) {
+    return new Promise(resolve => {
+      worker.onmessage = (e) => {
+        updateCountdownUI(e.data.secs);
+        if (e.data.secs <= 0) resolve();
+      };
+      worker.postMessage({ cmd: 'start', secs });
+    });
   }
 
   async function start() {
@@ -257,6 +275,7 @@
     document.getElementById("doneMsg").textContent = "";
     document.getElementById("log").innerHTML = "";
     await acquireWakeLock();
+    worker = createWorker();
 
     const total  = randInt(28, 32);
     const topics = shuffle(TOPICS).slice(0, total);
@@ -275,12 +294,12 @@
 
       if (i < topics.length - 1) {
         const wait = randInt(10, 180);
-        setCountdown(wait);
-        await sleep(wait * 1000);
+        await workerSleep(wait);
       }
     }
 
-    clearTimeout(timer);
+    worker.postMessage({ cmd: 'stop' });
+    worker.terminate();
     document.getElementById("progressFill").style.width = "100%";
     document.getElementById("status").textContent  = `Done — ${topics.length} topics browsed`;
     document.getElementById("topic").textContent   = "";

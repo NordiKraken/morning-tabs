@@ -181,9 +181,30 @@
     "how to improve memory and focus","best ultrawide monitors 2025"
   ];
 
-  let running  = false;
+  let running   = false;
   let countdown = 0;
-  let timer    = null;
+  let timer     = null;
+  let wakeLock  = null;
+
+  async function acquireWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      }
+    } catch (e) { /* not supported or denied — continue anyway */ }
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+  }
+
+  // re-acquire if page becomes visible again (e.g. user switches back)
+  document.addEventListener('visibilitychange', async () => {
+    if (running && document.visibilityState === 'visible') {
+      await acquireWakeLock();
+    }
+  });
 
   function shuffle(arr) {
     const a = [...arr];
@@ -235,6 +256,7 @@
     document.getElementById("startBtn").disabled = true;
     document.getElementById("doneMsg").textContent = "";
     document.getElementById("log").innerHTML = "";
+    await acquireWakeLock();
 
     const total  = randInt(28, 32);
     const topics = shuffle(TOPICS).slice(0, total);
@@ -266,6 +288,7 @@
     document.getElementById("doneMsg").textContent = "✓ Morning routine complete!";
     document.getElementById("startBtn").disabled   = false;
     log(`--- Run complete: ${topics.length} searches ---`, true);
+    releaseWakeLock();
     running = false;
   }
 </script>
